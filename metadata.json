@@ -1,0 +1,7 @@
+{
+  "name": "E-Comerce PDV 1.0",
+  "description": "Uma solução completa de e-commerce e frente de caixa para mercados, com gestão de produtos, clientes, finanças e integração com WhatsApp.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
