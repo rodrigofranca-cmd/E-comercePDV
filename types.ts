@@ -26,6 +26,7 @@ export interface Product {
   image: string;
   categoryId: string;
   isOffer: boolean;
+  isVisible: boolean;
   offerPrice?: number;
   minOfferQty?: number;
 }

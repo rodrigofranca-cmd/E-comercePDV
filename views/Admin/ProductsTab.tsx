@@ -28,6 +28,7 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
     stock: 0,
     image: '',
     isOffer: false,
+    isVisible: true,
     offerPrice: 0,
     minOfferQty: 1,
     categoryId: state.categories[0]?.id || ''
@@ -113,6 +114,7 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
           image: productData.image || 'https://cdn-icons-png.flaticon.com/512/679/679821.png',
           categoryId: catId,
           isOffer: productData.isoffer?.toLowerCase() === 'true',
+          isVisible: true, // Default to visible on import
           offerPrice: Number(productData.offerprice) || 0,
           minOfferQty: Number(productData.minofferqty) || 1,
         };
@@ -332,8 +334,8 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
         <button
           onClick={() => setActiveFilter(activeFilter === 'low-stock' ? 'none' : 'low-stock')}
           className={`py-2 px-3 rounded-xl text-[8px] font-black italic uppercase transition-all border-2 flex items-center justify-center gap-2 ${activeFilter === 'low-stock'
-              ? 'bg-primary text-white border-primary shadow-lg scale-105'
-              : 'bg-white text-primary border-primary shadow-sm active:scale-95'
+            ? 'bg-primary text-white border-primary shadow-lg scale-105'
+            : 'bg-white text-primary border-primary shadow-sm active:scale-95'
             }`}
         >
           <span className="text-sm">⚠️</span>
@@ -342,8 +344,8 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
         <button
           onClick={() => setActiveFilter(activeFilter === 'expiring' ? 'none' : 'expiring')}
           className={`py-2 px-3 rounded-xl text-[8px] font-black italic uppercase transition-all border-2 flex items-center justify-center gap-2 ${activeFilter === 'expiring'
-              ? 'bg-primary text-white border-primary shadow-lg scale-105'
-              : 'bg-white text-primary border-primary shadow-sm active:scale-95'
+            ? 'bg-primary text-white border-primary shadow-lg scale-105'
+            : 'bg-white text-primary border-primary shadow-sm active:scale-95'
             }`}
         >
           <span className="text-sm">📅</span>
@@ -357,10 +359,21 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
           {filteredProducts.map((p: Product) => (
             <div
               key={p.id}
-              onClick={() => handleEditProduct(p)}
-              className="flex items-center gap-3 p-3 bg-white rounded-[22px] border border-slate-50 shadow-sm active:scale-[0.98] transition-all cursor-pointer group"
+              className="flex items-center gap-3 p-3 bg-white rounded-[22px] border border-slate-50 shadow-sm active:scale-[0.98] transition-all cursor-pointer group relative"
             >
-              <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center p-1.5 border border-slate-50 group-hover:scale-105 transition-transform">
+              {/* Toggle de Visibilidade Direto na Lista */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  state.updateProduct({ ...p, isVisible: !p.isVisible });
+                }}
+                className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center shadow-md border-2 border-white transition-all z-10 ${p.isVisible ? 'bg-secondary' : 'bg-slate-300'}`}
+                title={p.isVisible ? "Produto Visível" : "Produto Oculto"}
+              >
+                <span className="text-[10px]">{p.isVisible ? '👁️' : '🚫'}</span>
+              </button>
+
+              <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center p-1.5 border border-slate-50 group-hover:scale-105 transition-transform" onClick={() => handleEditProduct(p)}>
                 <img src={p.image} className="max-w-full max-h-full object-contain filter drop-shadow-sm" alt="" />
               </div>
               <div className="flex-1 min-w-0">
@@ -438,8 +451,18 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
             <div className="w-20 h-20 bg-slate-50 rounded-[25px] border-2 border-dashed flex items-center justify-center p-2 overflow-hidden">{productForm.image ? (<img src={productForm.image} className="max-h-full object-contain" />) : (<span className="text-[7px] text-slate-300 uppercase">SEM FOTO</span>)}</div>
           </div>
           <div className="p-5 bg-orange-50/50 rounded-[35px] border border-orange-100 space-y-4">
-            <div className="flex justify-between items-center"><span className="text-[10px] font-black italic uppercase text-orange-600">Ativar Oferta?</span><input type="checkbox" checked={productForm.isOffer} onChange={e => setProductForm({ ...productForm, isOffer: e.target.checked })} className="w-12 h-6 bg-slate-200 rounded-full appearance-none checked:bg-secondary transition-all relative after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:w-4 after:h-4 after:rounded-full checked:after:translate-x-6 shadow-inner" /></div>
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black italic uppercase text-orange-600">Ativar Oferta?</span>
+              <input type="checkbox" checked={productForm.isOffer} onChange={e => setProductForm({ ...productForm, isOffer: e.target.checked })} className="w-12 h-6 bg-slate-200 rounded-full appearance-none checked:bg-secondary transition-all relative after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:w-4 after:h-4 after:rounded-full checked:after:translate-x-6 shadow-inner" />
+            </div>
             {productForm.isOffer && (<div className="grid grid-cols-2 gap-4 animate-in fade-in duration-300"><Input label="PREÇO OFERTA" type="number" value={productForm.offerPrice} onChange={e => setProductForm({ ...productForm, offerPrice: Number(e.target.value) })} /><Input label="QTD MÍN" type="number" value={productForm.minOfferQty} onChange={e => setProductForm({ ...productForm, minOfferQty: Number(e.target.value) })} /></div>)}
+
+            <div className="h-px bg-orange-200/50 w-full"></div>
+
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black italic uppercase text-slate-500">Produto Visível para Venda?</span>
+              <input type="checkbox" checked={productForm.isVisible} onChange={e => setProductForm({ ...productForm, isVisible: e.target.checked })} className="w-12 h-6 bg-slate-200 rounded-full appearance-none checked:bg-green-500 transition-all relative after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:w-4 after:h-4 after:rounded-full checked:after:translate-x-6 shadow-inner" />
+            </div>
           </div>
           <Button onClick={handleSaveProduct} variant="secondary" className="w-full py-5 text-xl italic font-black uppercase rounded-[30px] shadow-xl">{editingProductId ? 'ATUALIZAR PRODUTO' : 'SALVAR NOVO PRODUTO'}</Button>
         </div>

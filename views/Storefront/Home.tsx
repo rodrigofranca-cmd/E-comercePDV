@@ -27,17 +27,17 @@ export const HomeView: React.FC<HomeViewProps> = ({ state, onNavigate }) => {
       if (showOnlyOffers) return p.isOffer;
       const matchesCategory = selectedCategory ? p.categoryId === selectedCategory : true;
       const matchesSearch = search ? p.name.toLowerCase().includes(search.toLowerCase()) : true;
-      return matchesCategory && matchesSearch;
+      return p.isVisible && matchesCategory && matchesSearch;
     });
   }, [state.products, selectedCategory, showOnlyOffers, search]);
 
   const visibleCategories = useMemo(() => {
     return state.categories.filter((cat: Category) =>
-      state.products.some((p: Product) => p.categoryId === cat.id)
+      state.products.some((p: Product) => p.isVisible && p.categoryId === cat.id)
     );
   }, [state.categories, state.products]);
 
-  const offers = useMemo(() => state.products.filter((p: Product) => p.isOffer), [state.products]);
+  const offers = useMemo(() => state.products.filter((p: Product) => p.isVisible && p.isOffer), [state.products]);
 
   useEffect(() => {
     if (offers.length <= 1) return;

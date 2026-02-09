@@ -34,6 +34,7 @@ export const useAppState = () => {
           salePrice2: p.sale_price2,
           categoryId: p.category_id,
           isOffer: p.is_offer,
+          isVisible: p.is_visible,
           offerPrice: p.offer_price,
           minOfferQty: p.min_offer_qty
         }));
@@ -100,6 +101,7 @@ export const useAppState = () => {
           salePrice2: p.sale_price2,
           categoryId: p.category_id,
           isOffer: p.is_offer,
+          isVisible: p.is_visible,
           offerPrice: p.offer_price,
           minOfferQty: p.min_offer_qty
         });
@@ -265,6 +267,7 @@ export const useAppState = () => {
         image: product.image,
         category_id: product.categoryId,
         is_offer: product.isOffer,
+        is_visible: product.isVisible,
         offer_price: product.offerPrice,
         min_offer_qty: product.minOfferQty
       };
@@ -284,6 +287,7 @@ export const useAppState = () => {
         image: product.image,
         category_id: product.categoryId,
         is_offer: product.isOffer,
+        is_visible: product.isVisible,
         offer_price: product.offerPrice,
         min_offer_qty: product.minOfferQty
       };
