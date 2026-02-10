@@ -323,8 +323,34 @@ export const useAppState = () => {
       if (error) console.error("Error adding employee:", error);
     },
     updateOrderStatus: async (orderId: string, status: OrderStatus) => {
+      // 1. Atualiza o status no banco
       const { error } = await supabase.from('orders').update({ status }).eq('id', orderId);
-      if (error) console.error("Error updating order status:", error);
+      if (error) {
+        console.error("Error updating order status:", error);
+        return;
+      }
+
+      // 2. Se o status for CANCELADO, repõe o estoque e ajusta o débito (se for conta)
+      if (status === OrderStatus.CANCELLED) {
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+          // Repõe o Estoque
+          for (const item of order.items) {
+            const product = products.find(p => p.id === item.productId);
+            if (product) {
+              await supabase.from('products').update({ stock: product.stock + item.quantity }).eq('id', item.productId);
+            }
+          }
+
+          // Repõe o Débito do Cliente (se for Fiado/Conta)
+          if (order.paymentMethod === PaymentMethod.ACCOUNT && order.clientId) {
+            const client = clients.find(c => c.id === order.clientId);
+            if (client) {
+              await supabase.from('clients').update({ debt: Math.max(0, client.debt - order.total) }).eq('id', order.clientId);
+            }
+          }
+        }
+      }
     }
   };
 };
