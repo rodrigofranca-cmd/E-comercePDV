@@ -24,6 +24,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ state, onNavigate }) => {
 
   const filteredProducts = useMemo(() => {
     return state.products.filter((p: Product) => {
+      // Regra de Estoque: Só exibe se stock > 0
+      if (p.stock <= 0) return false;
+
       if (showOnlyOffers) return p.isOffer;
       const matchesCategory = selectedCategory ? p.categoryId === selectedCategory : true;
       const matchesSearch = search ? p.name.toLowerCase().includes(search.toLowerCase()) : true;
@@ -33,11 +36,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ state, onNavigate }) => {
 
   const visibleCategories = useMemo(() => {
     return state.categories.filter((cat: Category) =>
-      state.products.some((p: Product) => p.isVisible && p.categoryId === cat.id)
+      state.products.some((p: Product) => p.isVisible && p.categoryId === cat.id && p.stock > 0)
     );
   }, [state.categories, state.products]);
 
-  const offers = useMemo(() => state.products.filter((p: Product) => p.isVisible && p.isOffer), [state.products]);
+  const offers = useMemo(() => state.products.filter((p: Product) => p.isVisible && p.isOffer && p.stock > 0), [state.products]);
 
   useEffect(() => {
     if (offers.length <= 1) return;
