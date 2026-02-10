@@ -50,8 +50,36 @@ export const ClientsTab: React.FC<{ state: any }> = ({ state }) => {
     }
   };
 
+  const totalDebt = state.clients.reduce((acc: number, c: Client) => acc + (c.debt || 0), 0);
+
+  const getClientLastPurchase = (clientId: string) => {
+    const clientOrders = state.orders
+      .filter((o: any) => o.clientId === clientId)
+      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return clientOrders[0]?.createdAt;
+  };
+
+  const isOverdue = (dateStr?: string, debt?: number) => {
+    if (!dateStr || !debt || debt <= 0) return false;
+    const lastDate = new Date(dateStr);
+    const today = new Date();
+    const diffTime = Math.abs(today.getTime() - lastDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 29;
+  };
+
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4">
+        <Card className="p-6 bg-gradient-to-br from-secondary to-secondary/80 text-white border-none shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+            <svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"></path></svg>
+          </div>
+          <p className="text-[10px] font-black italic uppercase tracking-widest opacity-80 mb-1">Resumo Total de Dívidas 💰</p>
+          <h2 className="text-4xl font-black italic drop-shadow-md">R$ {totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
+        </Card>
+      </div>
+
       <Card className="p-6">
         <h3 className="text-sm font-black italic uppercase text-gray-800 mb-4">Cadastro de Clientes</h3>
         <div className="space-y-4">
@@ -79,38 +107,47 @@ export const ClientsTab: React.FC<{ state: any }> = ({ state }) => {
       </div>
 
       <div className="space-y-4">
-        {state.clients.filter((c: Client) => c.name.toLowerCase().includes(search.toLowerCase())).map((c: Client) => (
-          <Card key={c.id} className="p-4 space-y-4">
-            <div className="flex justify-between items-start">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center"><svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg></div>
-                <div>
-                  <h4 className="font-black italic uppercase text-gray-700">{c.name}</h4>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">📱 {c.whatsapp} 🗓️ 05/02/2026</p>
+        {state.clients.filter((c: Client) => c.name.toLowerCase().includes(search.toLowerCase())).map((c: Client) => {
+          const lastPurchaseDate = getClientLastPurchase(c.id);
+          const overdue = isOverdue(lastPurchaseDate, c.debt);
+
+          return (
+            <Card key={c.id} className={`p-4 space-y-4 transition-colors ${overdue ? 'border-red-200 bg-red-50/30' : 'border-slate-100'}`}>
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${overdue ? 'bg-red-100' : 'bg-gray-200'}`}>
+                    <svg className={`w-6 h-6 ${overdue ? 'text-red-500' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>
+                  </div>
+                  <div>
+                    <h4 className={`font-black italic uppercase transition-colors ${overdue ? 'text-red-600' : 'text-gray-700'}`}>
+                      {c.name} {overdue && <span className="text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded-full not-italic ml-1">BLOQUEADO</span>}
+                    </h4>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">📱 {c.whatsapp} 🗓️ {lastPurchaseDate ? new Date(lastPurchaseDate).toLocaleDateString('pt-BR') : 'SEM COMPRAS'}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className={`text-[8px] font-black uppercase ${overdue ? 'text-red-400' : 'text-green-500'}`}>Restante: R$ {(c.limit - c.debt).toFixed(2)}</p>
+                  <p className={`text-xl font-black italic ${overdue ? 'text-red-600' : (c.debt > 0 ? 'text-secondary' : 'text-green-500')}`}>R$ {c.debt.toFixed(2)}</p>
+                  <p className="text-[8px] font-bold text-gray-400 uppercase">Dívida Atual</p>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-[8px] font-black text-green-500 uppercase">Restante: R$ {(c.limit - c.debt).toFixed(2)}</p>
-                <p className={`text-xl font-black italic ${c.debt > 0 ? 'text-secondary' : 'text-green-500'}`}>R$ {c.debt.toFixed(2)}</p>
-                <p className="text-[8px] font-bold text-gray-400 uppercase">Dívida Atual</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { setSelectedClient(c); setIsDebtModalOpen(true); }}
+                  className={`flex-1 ${overdue ? 'bg-red-600 text-white border-red-700' : 'bg-green-50 text-green-600 border-green-200'} border py-2 rounded-xl text-[10px] font-black italic uppercase flex items-center justify-center gap-2 active:scale-95 shadow-sm`}
+                >
+                  📝 {overdue ? 'QUITAR p/ DESBLOQUEAR' : 'Quitar Dívida'}
+                </button>
+                <button
+                  onClick={() => window.open(`https://wa.me/${c.whatsapp}?text=${encodeURIComponent("Olá " + c.name + ", estamos passando para lembrar da sua pendência de R$ " + c.debt.toFixed(2))}`)}
+                  className="flex-1 bg-blue-50 border border-blue-200 text-blue-600 py-2 rounded-xl text-[10px] font-black italic uppercase flex items-center justify-center gap-2 active:scale-95"
+                >
+                  💬 Cobrar no Zap
+                </button>
               </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => { setSelectedClient(c); setIsDebtModalOpen(true); }}
-                className="flex-1 bg-green-50 border border-green-200 text-green-600 py-2 rounded-xl text-[10px] font-black italic uppercase flex items-center justify-center gap-2 active:scale-95"
-              >
-                📝 Quitar Dívida
-              </button>
-              <button
-                onClick={() => window.open(`https://wa.me/${c.whatsapp}?text=${encodeURIComponent("Olá " + c.name + ", estamos passando para lembrar da sua pendência de R$ " + c.debt.toFixed(2))}`)}
-                className="flex-1 bg-blue-50 border border-blue-200 text-blue-600 py-2 rounded-xl text-[10px] font-black italic uppercase flex items-center justify-center gap-2 active:scale-95"
-              >
-                💬 Cobrar no Zap
-              </button>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
 
       <Modal isOpen={isDebtModalOpen} onClose={() => setIsDebtModalOpen(false)} title="GERENCIAR DÍVIDA">
