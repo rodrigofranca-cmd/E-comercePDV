@@ -75,7 +75,7 @@ export const ClientsTab: React.FC<{ state: any }> = ({ state }) => {
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
             <svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"></path></svg>
           </div>
-          <p className="text-[10px] font-black italic uppercase tracking-widest opacity-80 mb-1">Resumo Total de Dívidas 💰</p>
+          <p className="text-[12px] font-black italic uppercase tracking-widest opacity-80 mb-1">Resumo Total de Dívidas 💰</p>
           <h2 className="text-4xl font-black italic drop-shadow-md">R$ {totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
         </Card>
       </div>
@@ -119,28 +119,28 @@ export const ClientsTab: React.FC<{ state: any }> = ({ state }) => {
                     <svg className={`w-6 h-6 ${overdue ? 'text-red-500' : 'text-gray-400'}`} fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>
                   </div>
                   <div>
-                    <h4 className={`font-black italic uppercase transition-colors ${overdue ? 'text-red-600' : 'text-gray-700'}`}>
-                      {c.name} {overdue && <span className="text-[8px] bg-red-600 text-white px-1.5 py-0.5 rounded-full not-italic ml-1">BLOQUEADO</span>}
+                    <h4 className={`font-black italic uppercase transition-colors ${overdue ? 'text-xl text-red-600' : 'text-lg text-gray-700'}`}>
+                      {c.name} {overdue && <span className="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded-full not-italic ml-1 align-middle">BLOQUEADO</span>}
                     </h4>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">📱 {c.whatsapp} 🗓️ {lastPurchaseDate ? new Date(lastPurchaseDate).toLocaleDateString('pt-BR') : 'SEM COMPRAS'}</p>
+                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-tight">📱 {c.whatsapp} 🗓️ {lastPurchaseDate ? new Date(lastPurchaseDate).toLocaleDateString('pt-BR') : 'SEM COMPRAS'}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-[8px] font-black uppercase ${overdue ? 'text-red-400' : 'text-green-500'}`}>Restante: R$ {(c.limit - c.debt).toFixed(2)}</p>
-                  <p className={`text-xl font-black italic ${overdue ? 'text-red-600' : (c.debt > 0 ? 'text-secondary' : 'text-green-500')}`}>R$ {c.debt.toFixed(2)}</p>
-                  <p className="text-[8px] font-bold text-gray-400 uppercase">Dívida Atual</p>
+                  <p className={`text-[10px] font-black uppercase ${overdue ? 'text-red-400' : 'text-green-500'}`}>Restante: R$ {(c.limit - c.debt).toFixed(2)}</p>
+                  <p className={`text-2xl font-black italic ${overdue ? 'text-red-600' : (c.debt > 0 ? 'text-secondary' : 'text-green-500')}`}>R$ {c.debt.toFixed(2)}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Dívida Atual</p>
                 </div>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => { setSelectedClient(c); setIsDebtModalOpen(true); }}
-                  className={`flex-1 ${overdue ? 'bg-red-600 text-white border-red-700' : 'bg-green-50 text-green-600 border-green-200'} border py-2 rounded-xl text-[10px] font-black italic uppercase flex items-center justify-center gap-2 active:scale-95 shadow-sm`}
+                  className={`flex-1 ${overdue ? 'bg-red-600 text-white border-red-700' : 'bg-green-50 text-green-600 border-green-200'} border py-3 rounded-xl text-[11.5px] font-black italic uppercase flex items-center justify-center gap-2 active:scale-95 shadow-sm`}
                 >
                   📝 {overdue ? 'QUITAR p/ DESBLOQUEAR' : 'Quitar Dívida'}
                 </button>
                 <button
                   onClick={() => window.open(`https://wa.me/${c.whatsapp}?text=${encodeURIComponent("Olá " + c.name + ", estamos passando para lembrar da sua pendência de R$ " + c.debt.toFixed(2))}`)}
-                  className="flex-1 bg-blue-50 border border-blue-200 text-blue-600 py-2 rounded-xl text-[10px] font-black italic uppercase flex items-center justify-center gap-2 active:scale-95"
+                  className="flex-1 bg-blue-50 border border-blue-200 text-blue-600 py-3 rounded-xl text-[11.5px] font-black italic uppercase flex items-center justify-center gap-2 active:scale-95"
                 >
                   💬 Cobrar no Zap
                 </button>

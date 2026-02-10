@@ -255,7 +255,7 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
       <div className="grid grid-cols-2 gap-4">
         <button
           onClick={handleOpenNewProduct}
-          className="bg-secondary p-5 rounded-[30px] text-white font-black italic uppercase text-[9px] flex flex-col items-center justify-center text-center gap-2 shadow-xl active:scale-95 transition-all border border-white/20"
+          className="bg-secondary p-5 rounded-[30px] text-white font-black italic uppercase text-[11px] flex flex-col items-center justify-center text-center gap-2 shadow-xl active:scale-95 transition-all border border-white/20"
         >
           <span className="text-2xl filter drop-shadow-md">📦</span>
           <span className="leading-tight tracking-tight drop-shadow-md uppercase">CADASTRO DE PRODUTOS / SERVIÇOS</span>
@@ -263,7 +263,7 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
 
         <button
           onClick={() => setIsCategoryModalOpen(true)}
-          className="bg-secondary p-5 rounded-[30px] text-white font-black italic uppercase text-[9px] flex flex-col items-center justify-center text-center gap-2 shadow-xl active:scale-95 transition-all border border-white/20"
+          className="bg-secondary p-5 rounded-[30px] text-white font-black italic uppercase text-[11px] flex flex-col items-center justify-center text-center gap-2 shadow-xl active:scale-95 transition-all border border-white/20"
         >
           <span className="text-2xl filter drop-shadow-md">🗂️</span>
           <span className="leading-tight tracking-tight drop-shadow-md uppercase">CADASTRO DE CATEGORIAS / SETOR</span>
@@ -278,7 +278,7 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
             className="flex-1 bg-white border-2 border-dashed border-slate-200 py-3 rounded-[20px] flex items-center justify-center gap-3 active:scale-95 transition-all group"
           >
             <span className="text-lg group-hover:animate-bounce">📥</span>
-            <span className="text-[10px] font-black italic text-slate-400 uppercase tracking-tighter">IMPORTAR PRODUTOS (CSV/EXCEL)</span>
+            <span className="text-[11px] font-black italic text-slate-400 uppercase tracking-tighter">IMPORTAR PRODUTOS (CSV/EXCEL)</span>
           </button>
           <button
             onClick={() => setIsTemplateModalOpen(true)}
@@ -325,7 +325,7 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
           placeholder="PESQUISAR PRODUTO..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-6 py-2.5 bg-white rounded-[20px] shadow-sm outline-none focus:ring-2 focus:ring-secondary transition-all text-slate-700 font-black italic uppercase text-[9px] border border-slate-100"
+          className="w-full pl-12 pr-6 py-2.5 bg-white rounded-[20px] shadow-sm outline-none focus:ring-2 focus:ring-secondary transition-all text-slate-700 font-black italic uppercase text-[10.5px] border border-slate-100"
         />
       </div>
 
@@ -333,7 +333,7 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
       <div className="grid grid-cols-2 gap-3 px-1">
         <button
           onClick={() => setActiveFilter(activeFilter === 'low-stock' ? 'none' : 'low-stock')}
-          className={`py-2 px-3 rounded-xl text-[8px] font-black italic uppercase transition-all border-2 flex items-center justify-center gap-2 ${activeFilter === 'low-stock'
+          className={`py-2 px-3 rounded-xl text-[10px] font-black italic uppercase transition-all border-2 flex items-center justify-center gap-2 ${activeFilter === 'low-stock'
             ? 'bg-primary text-white border-primary shadow-lg scale-105'
             : 'bg-white text-primary border-primary shadow-sm active:scale-95'
             }`}
@@ -343,7 +343,7 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
         </button>
         <button
           onClick={() => setActiveFilter(activeFilter === 'expiring' ? 'none' : 'expiring')}
-          className={`py-2 px-3 rounded-xl text-[8px] font-black italic uppercase transition-all border-2 flex items-center justify-center gap-2 ${activeFilter === 'expiring'
+          className={`py-2 px-3 rounded-xl text-[10px] font-black italic uppercase transition-all border-2 flex items-center justify-center gap-2 ${activeFilter === 'expiring'
             ? 'bg-primary text-white border-primary shadow-lg scale-105'
             : 'bg-white text-primary border-primary shadow-sm active:scale-95'
             }`}

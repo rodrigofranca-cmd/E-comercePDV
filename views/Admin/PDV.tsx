@@ -308,7 +308,7 @@ export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, o
                   setPaymentMethod(m);
                 }}
                 disabled={isBlocked && isSelected}
-                className={`py-2.5 rounded-xl text-[7.5px] font-black italic uppercase shadow-sm transition-all border ${isSelected ? `${activeClass} scale-105 shadow-md` : (isBlocked && isAccount ? 'bg-red-50 text-red-200 border-red-100 cursor-not-allowed' : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50')}`}
+                className={`py-3 rounded-xl text-[9.5px] font-black italic uppercase shadow-sm transition-all border ${isSelected ? `${activeClass} scale-105 shadow-md` : (isBlocked && isAccount ? 'bg-red-50 text-red-200 border-red-100 cursor-not-allowed' : 'bg-white text-slate-400 border-slate-100 hover:bg-slate-50')}`}
               >
                 {isBlocked && isAccount ? '⛔ BLOQ.' : m}
               </button>

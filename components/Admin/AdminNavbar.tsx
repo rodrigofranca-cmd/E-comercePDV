@@ -23,9 +23,9 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, activeTab, setAc
             <div className="flex justify-between items-center mb-3">
                 <div className="flex flex-col">
                     <h1 className="text-white text-xl font-black italic uppercase tracking-tighter leading-none">ADMINISTRAÇÃO</h1>
-                    <span className="text-white/80 text-[7px] font-bold uppercase tracking-[0.1em] mt-1">ACESSO: {user.name} ({user.role})</span>
+                    <span className="text-white/80 text-[8.5px] font-bold uppercase tracking-[0.1em] mt-1">ACESSO: {user.name} ({user.role})</span>
                 </div>
-                <button onClick={onLogout} className="text-white font-black text-[9px] hover:text-white/80 uppercase tracking-widest px-2 py-1 bg-white/10 rounded-lg">SAIR</button>
+                <button onClick={onLogout} className="text-white font-black text-[11px] hover:text-white/80 uppercase tracking-widest px-3 py-1.5 bg-white/10 rounded-xl transition-all active:scale-90">SAIR</button>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -39,9 +39,9 @@ export const AdminNavbar: React.FC<AdminNavbarProps> = ({ user, activeTab, setAc
                             key={tab.id}
                             disabled={isRestricted}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`py-2 px-1 rounded-xl text-[7px] font-black italic uppercase transition-all shadow-md active:scale-95 whitespace-nowrap border flex items-center justify-center gap-1.5 ${activeTab === tab.id
-                                    ? 'bg-secondary text-white border-white/20 shadow-orange-500/40'
-                                    : 'bg-white/10 text-white/70 border-white/5 backdrop-blur-md'
+                            className={`py-2.5 px-1 rounded-xl text-[9px] font-black italic uppercase transition-all shadow-md active:scale-95 whitespace-nowrap border flex items-center justify-center gap-1.5 ${activeTab === tab.id
+                                ? 'bg-secondary text-white border-white/20 shadow-orange-500/40'
+                                : 'bg-white/10 text-white/70 border-white/5 backdrop-blur-md'
                                 } ${isRestricted ? 'opacity-40 grayscale cursor-not-allowed scale-100 active:scale-100' : ''}`}
                         >
                             <span className={activeTab === tab.id ? "border-b border-white/50" : ""}>
