@@ -249,6 +249,31 @@ export const useAppState = () => {
     orders, setOrders,
     cart, addToCart, clearCart, setCart,
     saveOrder, updateClientDebt,
+    deleteOrder: async (orderId: string) => {
+      // 1. Restaurar estoque
+      const order = orders.find(o => o.id === orderId);
+      if (order && order.status !== OrderStatus.CANCELLED) { // Só restaura se não tiver sido cancelado já (pois cancelar já restaura)
+        for (const item of order.items) {
+          const product = products.find(p => p.id === item.productId);
+          if (product) {
+            await supabase.from('products').update({ stock: product.stock + item.quantity }).eq('id', item.productId);
+          }
+        }
+      }
+
+      // 2. Deletar (Cascata deve deletar itens, mas por segurança deletamos manual se precisar, mas FK com cascade é o ideal. Vamos assumir FK cascade ou deletar itens primeiro)
+      await supabase.from('order_items').delete().eq('order_id', orderId);
+      const { error } = await supabase.from('orders').delete().eq('id', orderId);
+
+      if (error) {
+        console.error("Error deleting order:", error);
+        alert("Erro ao excluir venda.");
+      } else {
+        // Atualiza estado local
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+        alert("Venda excluída com sucesso!");
+      }
+    },
     addCategory: async (category: Category) => {
       const { error } = await supabase.from('categories').insert(category);
       if (error) console.error("Error adding category:", error);

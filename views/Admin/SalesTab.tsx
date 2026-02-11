@@ -19,6 +19,84 @@ export const SalesTab: React.FC<{ state: any }> = ({ state }) => {
     return matchesFilter && matchesSearch;
   });
 
+  const printReceipt = (order: Order) => {
+    const content = `
+      <html>
+        <head>
+          <title>Recibo #${order.id}</title>
+          <style>
+            body { font-family: 'Courier New', monospace; font-size: 10px; margin: 0; padding: 5px; width: 300px; }
+            .header { text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
+            .title { font-size: 12px; font-weight: bold; }
+            .info { font-size: 9px; }
+            .items { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+            .items th { border-bottom: 1px dashed #000; text-align: left; }
+            .items td { padding-top: 2px; }
+            .totals { text-align: right; border-top: 1px dashed #000; pt-2; }
+            .footer { text-align: center; margin-top: 10px; font-size: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="title">${state.config.name}</div>
+            <div class="info">${state.config.address}</div>
+            <div class="info">Tel: ${state.config.phone}</div>
+            <div class="info">CNPJ: ${state.config.cnpj}</div>
+          </div>
+          
+          <div class="info">
+            PEDIDO: #${order.id.toUpperCase()}<br/>
+            DATA: ${new Date(order.createdAt).toLocaleString('pt-BR')}<br/>
+            CLIENTE: ${order.clientName}
+          </div>
+          
+          <br/>
+          
+          <table class="items">
+            <thead>
+              <tr>
+                <th width="10%">QTD</th>
+                <th width="60%">ITEM</th>
+                <th width="30%" align="right">VALOR</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${order.items.map(item => `
+                <tr>
+                  <td>${item.quantity}</td>
+                  <td>${item.productName}</td>
+                  <td align="right">${(item.price * item.quantity).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div class="totals">
+            <strong>TOTAL: R$ ${order.total.toFixed(2)}</strong><br/>
+            FORMA PAGTO: ${order.paymentMethod}
+          </div>
+          
+          <div class="footer">
+            Obrigado pela preferência!<br/>
+            Volte sempre.
+          </div>
+          
+          <script>
+            window.onload = function() { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '', 'width=350,height=600');
+    if (printWindow) {
+      printWindow.document.write(content);
+      printWindow.document.close();
+    } else {
+      alert("Pop-up bloqueado! Permita pop-ups para imprimir.");
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       {/* Botão PDV / VENDA - Estilo Vibrante conforme Screenshot */}
@@ -71,12 +149,27 @@ export const SalesTab: React.FC<{ state: any }> = ({ state }) => {
                     <span className="text-[7px] font-black bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full uppercase italic tracking-tighter border border-blue-100/30 shadow-sm">{o.paymentMethod}</span>
                   </div>
                 </div>
-                <span className={`text-[7px] font-black px-3 py-1 rounded-full uppercase italic shadow-sm border ${o.status === OrderStatus.PENDING ? 'bg-orange-50 text-orange-500 border-orange-100' :
-                  o.status === OrderStatus.CONFIRMED ? 'bg-green-50 text-green-500 border-green-100' :
-                    'bg-red-50 text-red-500 border-red-100'
-                  }`}>
-                  {o.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[7px] font-black px-3 py-1 rounded-full uppercase italic shadow-sm border ${o.status === OrderStatus.PENDING ? 'bg-orange-50 text-orange-500 border-orange-100' :
+                    o.status === OrderStatus.CONFIRMED ? 'bg-green-50 text-green-500 border-green-100' :
+                      'bg-red-50 text-red-500 border-red-100'
+                    }`}>
+                    {o.status}
+                  </span>
+
+                  {/* Botão de Excluir */}
+                  <button
+                    onClick={async () => {
+                      if (confirm('ATENÇÃO: Deseja realmente excluir este pedido?')) {
+                        await state.deleteOrder(o.id);
+                      }
+                    }}
+                    className="w-6 h-6 rounded-full bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
+                    title="Excluir Venda"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  </button>
+                </div>
               </div>
 
               <div className="flex justify-between items-end border-b border-slate-50 pb-1.5">
@@ -113,7 +206,7 @@ export const SalesTab: React.FC<{ state: any }> = ({ state }) => {
 
               {o.status === OrderStatus.CONFIRMED && (
                 <button
-                  onClick={() => alert("Gerando comprovante...")}
+                  onClick={() => printReceipt(o)}
                   className="w-full bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white py-1.5 rounded-lg text-[7.5px] font-black italic uppercase flex items-center justify-center gap-2 shadow-md transition-all active:scale-95 border-t border-white/20 mt-1"
                 >
                   <span className="text-sm">🖨️</span> IMPRIMIR RECIBO TÉRMICO
