@@ -247,7 +247,7 @@ export const useAppState = () => {
     clients, setClients,
     employees, setEmployees,
     orders, setOrders,
-    cart, addToCart, clearCart,
+    cart, addToCart, clearCart, setCart,
     saveOrder, updateClientDebt,
     addCategory: async (category: Category) => {
       const { error } = await supabase.from('categories').insert(category);

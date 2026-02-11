@@ -3,41 +3,89 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Button, Input, Modal, Card } from '../../components/UI';
 import { Product, PaymentMethod, Client } from '../../types';
 import { Html5Qrcode } from 'html5-qrcode';
+import { Pix } from '../../src/lib/pix';
 
 export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, onBack }) => {
   const [search, setSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [items, setItems] = useState<any[]>([]);
+  // Remove local items state, use global state.cart
+  const items = state.cart;
+  const setItems = state.setCart;
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
   const [cashReceived, setCashReceived] = useState<number>(0);
   const [isScanning, setIsScanning] = useState(false);
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  const total = useMemo(() => items.reduce((acc, i) => acc + (i.price * i.quantity), 0), [items]);
+  const total = useMemo(() => items.reduce((acc: any, i: any) => acc + (i.price * i.quantity), 0), [items]);
   const change = Math.max(0, cashReceived - total);
 
-  // Produtos que batem com a pesquisa atual
+  // Produtos que batem com a pesquisa atual (Filtrando estoque <= 0)
   const searchResults = useMemo(() => {
     if (!search.trim()) return [];
     const lowerSearch = search.toLowerCase();
     return state.products.filter((p: Product) =>
-      p.name.toLowerCase().includes(lowerSearch) ||
-      p.barcode.includes(search)
-    ).slice(0, 5); // Limita a 5 resultados para não poluir
+      p.stock > 0 && ( // Filtro de Estoque
+        p.name.toLowerCase().includes(lowerSearch) ||
+        p.barcode.includes(search)
+      )
+    ).slice(0, 5);
   }, [search, state.products]);
 
+  // Recalcular preços quando método de pagamento muda
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    const newItems = items.map((item: any) => {
+      const product = state.products.find((p: any) => p.id === item.productId);
+      if (!product) return item;
+
+      let currentPrice = product.salePrice1;
+
+      if (paymentMethod === PaymentMethod.ACCOUNT) {
+        // Se for A PRAZO, usa SalePrice2 (ou fallback para SalePrice1)
+        currentPrice = product.salePrice2 || product.salePrice1;
+      } else {
+        // Lógica padrão (Oferta)
+        if (product.isOffer && product.offerPrice !== undefined && item.quantity >= (product.minOfferQty || 1)) {
+          currentPrice = product.offerPrice;
+        }
+      }
+
+      return { ...item, price: currentPrice };
+    });
+
+    // Só atualiza se houver mudança para evitar loop infinito
+    const hasChanges = newItems.some((item: any, idx: number) => item.price !== items[idx].price);
+    if (hasChanges) {
+      setItems(newItems);
+    }
+  }, [paymentMethod, state.products]); // Removed items from dependency to avoid loop, logic depends on paymentMethod change mainly. Note: need to be careful.
+
+  // Helper para adicionar produto
   const addProductToSale = (product: Product) => {
-    const existing = items.find(i => i.productId === product.id);
+    if (product.stock <= 0) {
+      alert("Produto sem estoque!");
+      return;
+    }
+
+    const existingIndex = items.findIndex((i: any) => i.productId === product.id);
+    const existing = items[existingIndex];
     const newQty = (existing ? existing.quantity : 0) + 1;
 
-    // Calcula preço baseado na quantidade
     let currentPrice = product.salePrice1;
-    if (product.isOffer && product.offerPrice !== undefined && newQty >= (product.minOfferQty || 1)) {
-      currentPrice = product.offerPrice;
+    if (paymentMethod === PaymentMethod.ACCOUNT) {
+      currentPrice = product.salePrice2 || product.salePrice1;
+    } else {
+      if (product.isOffer && product.offerPrice !== undefined && newQty >= (product.minOfferQty || 1)) {
+        currentPrice = product.offerPrice;
+      }
     }
 
     if (existing) {
-      setItems(items.map(i => i.productId === product.id ? { ...i, quantity: newQty, price: currentPrice } : i));
+      const newItems = [...items];
+      newItems[existingIndex] = { ...existing, quantity: newQty, price: currentPrice };
+      setItems(newItems);
     } else {
       setItems([...items, {
         productId: product.id,
@@ -50,23 +98,29 @@ export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, o
   };
 
   const updateItemQty = (idx: number, delta: number) => {
-    setItems(prev => {
-      const newItems = [...prev];
-      const item = newItems[idx];
-      const product = state.products.find((p: any) => p.id === item.productId);
-      if (!product) return prev;
+    const newItems = [...items];
+    const item = newItems[idx];
+    const product = state.products.find((p: any) => p.id === item.productId);
+    if (!product) return;
 
-      const newQty = Math.max(1, item.quantity + delta);
+    const newQty = Math.max(1, item.quantity + delta);
 
-      // Recalcula o preço individual do item com base na nova QTD
-      let currentPrice = product.salePrice1;
+    let currentPrice = product.salePrice1;
+    if (paymentMethod === PaymentMethod.ACCOUNT) {
+      currentPrice = product.salePrice2 || product.salePrice1;
+    } else {
       if (product.isOffer && product.offerPrice !== undefined && newQty >= (product.minOfferQty || 1)) {
         currentPrice = product.offerPrice;
       }
+    }
 
-      newItems[idx] = { ...item, quantity: newQty, price: currentPrice };
-      return newItems;
-    });
+    newItems[idx] = { ...item, quantity: newQty, price: currentPrice };
+    setItems(newItems);
+  };
+
+  const removeItem = (idx: number) => {
+    const newItems = items.filter((_: any, i: number) => i !== idx);
+    setItems(newItems);
   };
 
   const handleManualSubmit = (e: React.FormEvent) => {
@@ -104,8 +158,12 @@ export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, o
         (decodedText) => {
           const product = state.products.find((p: Product) => p.barcode === decodedText);
           if (product) {
-            addProductToSale(product);
-            stopScanning();
+            if (product.stock > 0) {
+              addProductToSale(product);
+              stopScanning();
+            } else {
+              alert("Produto sem estoque: " + product.name);
+            }
           } else {
             alert("Produto não encontrado: " + decodedText);
           }
@@ -119,7 +177,7 @@ export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, o
     return () => { if (scannerRef.current) scannerRef.current.stop().catch(() => { }); };
   }, [isScanning]);
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     if (items.length === 0) return;
 
     const newOrder = {
@@ -136,18 +194,31 @@ export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, o
       createdAt: new Date().toISOString()
     };
 
-    state.saveOrder(newOrder);
+    await state.saveOrder(newOrder);
     alert("VENDA CONCLUÍDA!");
-    setItems([]);
+    setItems([]); // Limpa o carrinho global após finalizar
     setCashReceived(0);
     setSelectedClient(null);
     setSearch('');
   };
 
-  // Gera uma string simples para o QR Code do PIX baseada na chave e valor
+  // Gera QR Code PIX válido (BR Code)
   const pixQrCodeUrl = useMemo(() => {
-    const data = `PIX|${state.config.pixKey}|${total.toFixed(2)}|${state.config.name}`;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data)}`;
+    if (total <= 0 || !state.config.pixKey) return '';
+    try {
+      // Gera o payload Pix Copia e Cola
+      const payload = Pix.payload(
+        state.config.pixKey,
+        state.config.name || 'PDV',
+        'SuaCidade', // Idealmente viria da config
+        '',
+        total
+      );
+      return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(payload)}`;
+    } catch (e) {
+      console.error("Erro gerar PIX:", e);
+      return '';
+    }
   }, [state.config.pixKey, state.config.name, total]);
 
   return (
@@ -223,16 +294,16 @@ export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, o
               <p className="text-[10px] font-black uppercase italic">Nenhum item na venda</p>
             </div>
           ) : (
-            items.map((item, idx) => {
+            items.map((item: any, idx: number) => {
               const product = state.products.find((p: any) => p.id === item.productId);
-              const hasPotentialOffer = product?.isOffer && item.quantity < (product.minOfferQty || 1);
+              const hasPotentialOffer = product?.isOffer && item.quantity < (product.minOfferQty || 1) && paymentMethod !== PaymentMethod.ACCOUNT;
 
               return (
                 <div key={idx} className="flex justify-between items-center bg-slate-50/50 p-3 rounded-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
                   <div className="flex-1 min-w-0 pr-2">
                     <div className="flex items-center gap-2">
                       <p className="text-[10px] font-black text-slate-700 uppercase italic truncate">{item.productName}</p>
-                      {item.price === product?.offerPrice && (
+                      {item.price === product?.offerPrice && paymentMethod !== PaymentMethod.ACCOUNT && (
                         <span className="bg-promo text-white text-[6px] px-1 rounded-full font-black italic">OFERTA</span>
                       )}
                     </div>
@@ -250,7 +321,7 @@ export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, o
                       <button onClick={() => updateItemQty(idx, 1)} className="w-6 h-6 flex items-center justify-center font-black text-primary hover:bg-slate-50 rounded-full transition-colors">+</button>
                     </div>
                     <button
-                      onClick={() => setItems(items.filter((_, iidx) => iidx !== idx))}
+                      onClick={() => removeItem(idx)}
                       className="p-1.5 text-red-300 hover:text-red-500 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -294,7 +365,7 @@ export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, o
 
             let activeClass = 'bg-primary text-white border-primary';
             if (isAccount) {
-              activeClass = isBlocked ? 'bg-red-100 text-red-300 border-red-200 cursor-not-allowed opacity-50' : 'bg-secondary text-white border-secondary';
+              activeClass = isBlocked ? 'bg-red-100 text-red-300 border-red-200 cursor-not-allowed opacity-50' : 'bg-secondary text-white border-secondary switch-price-animation';
             }
 
             return (
@@ -344,9 +415,10 @@ export const PDVView: React.FC<{ state: any; onBack: () => void }> = ({ state, o
           <div className="flex flex-col items-center bg-slate-50 p-4 rounded-[30px] border border-slate-100 animate-in zoom-in-95 duration-300 shadow-inner">
             <p className="text-[8px] font-black text-primary uppercase italic mb-2 tracking-widest">ESCANEIE PARA PAGAR VIA PIX</p>
             <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100">
-              <img src={pixQrCodeUrl} className="w-32 h-32 object-contain" alt="PIX QR Code" />
+              <img src={pixQrCodeUrl} className="w-40 h-40 object-contain" alt="PIX QR Code" />
             </div>
             <p className="text-[7px] font-bold text-slate-400 mt-2 uppercase">CHAVE: {state.config.pixKey}</p>
+            <p className="text-[7px] font-bold text-slate-400 uppercase">VALOR: R$ {total.toFixed(2)}</p>
           </div>
         )}
 
