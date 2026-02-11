@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS sale_price2 NUMERIC DEFAULT 0;

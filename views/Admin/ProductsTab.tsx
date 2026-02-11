@@ -31,7 +31,8 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
     isVisible: true,
     offerPrice: 0,
     minOfferQty: 1,
-    categoryId: state.categories[0]?.id || ''
+    categoryId: state.categories[0]?.id || '',
+    salePrice2: 0
   };
 
   const [productForm, setProductForm] = useState<Partial<Product>>(emptyProduct);
@@ -441,6 +442,9 @@ export const ProductsTab: React.FC<{ state: any }> = ({ state }) => {
           <div className="grid grid-cols-2 gap-4">
             <Input label="PREÇO VENDA *" type="number" value={productForm.salePrice1} onChange={e => setProductForm({ ...productForm, salePrice1: Number(e.target.value) })} />
             <div className="flex flex-col gap-1 w-full"><label className="text-[10px] font-black italic uppercase text-gray-400 ml-2">CATEGORIA</label><select className="px-4 py-2 bg-gray-100 border-none rounded-2xl outline-none shadow-inner text-sm font-bold text-gray-700" value={productForm.categoryId} onChange={e => setProductForm({ ...productForm, categoryId: e.target.value })}>{state.categories.map((c: any) => (<option key={c.id} value={c.id}>{c.name}</option>))}</select></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="PREÇO VENDA 2" type="number" value={productForm.salePrice2 || 0} onChange={e => setProductForm({ ...productForm, salePrice2: Number(e.target.value) })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="ESTOQUE" type="number" value={productForm.stock} onChange={e => setProductForm({ ...productForm, stock: Number(e.target.value) })} />
