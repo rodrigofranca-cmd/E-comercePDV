@@ -6,6 +6,49 @@ export const FinanceTab: React.FC<{ state: any }> = ({ state }) => {
    const [filter, setFilter] = useState<'TUDO' | 'DIARIO' | 'SEMANAL' | 'MENSAL' | 'ANUAL'>('TUDO');
 
    const stats = useMemo(() => {
+      const now = new Date();
+      const todayStr = now.toDateString();
+
+      // Inícios dos períodos (timestamp em MS para comparação direta)
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay()); // Domingo como início da semana
+      startOfWeek.setHours(0, 0, 0, 0);
+      const startOfWeekMs = startOfWeek.getTime();
+
+      const startOfMonthMs = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+      const startOfYearMs = new Date(now.getFullYear(), 0, 1).getTime();
+
+      // 1. Filtrar pedidos válidos e dentro do período selecionado
+      const filteredOrders = (state.orders || []).filter((o: any) => {
+         // REGRA: Somente vendas CONFIRMADAS são computadas no financeiro.
+         if (o.status !== 'CONFIRMADO') return false;
+
+         // Se for TUDO, não precisa verificar data
+         if (filter === 'TUDO') return true;
+
+         // Pegar data (suportando ambas as convenções: createdAt e created_at)
+         const dateStr = o.createdAt || o.created_at;
+         if (!dateStr) return false;
+
+         const orderDate = new Date(dateStr);
+         if (isNaN(orderDate.getTime())) return false;
+
+         // Comparação por período
+         if (filter === 'DIARIO') {
+            return orderDate.toDateString() === todayStr;
+         }
+
+         const orderMs = orderDate.getTime();
+         if (filter === 'SEMANAL') return orderMs >= startOfWeekMs;
+         if (filter === 'MENSAL') return orderMs >= startOfMonthMs;
+         if (filter === 'ANUAL') return orderMs >= startOfYearMs;
+
+         return true;
+      });
+
+      // 2. Calcular estatísticas sobre os pedidos filtrados
       const totalsByMethod = {
          PIX: 0,
          'CRÉDITO': 0,
@@ -17,49 +60,25 @@ export const FinanceTab: React.FC<{ state: any }> = ({ state }) => {
       let totalSales = 0;
       let totalProfit = 0;
 
-      const now = new Date();
-      // Normaliza hoje para 00:00:00 local
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      filteredOrders.forEach((o: any) => {
+         const orderTotal = Number(o.total || 0);
+         totalSales += orderTotal;
 
-      const startOfWeek = new Date(startOfToday);
-      startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
-
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
-
-      state.orders.forEach((o: any) => {
-         if (o.status !== 'CONFIRMADO') return;
-
-         // Se não houver data, ignoramos no relatório filtrado (exceto TUDO)
-         if (!o.createdAt && filter !== 'TUDO') return;
-
-         const orderDate = new Date(o.createdAt);
-         if (isNaN(orderDate.getTime())) return;
-
-         // Filtro de data robusto
-         if (filter === 'DIARIO') {
-            // Compara apenas a data (dia/mês/ano) ignorando horas
-            if (orderDate.toDateString() !== now.toDateString()) return;
-         } else if (filter === 'SEMANAL') {
-            if (orderDate < startOfWeek) return;
-         } else if (filter === 'MENSAL') {
-            if (orderDate < startOfMonth) return;
-         } else if (filter === 'ANUAL') {
-            if (orderDate < startOfYear) return;
-         }
-
-         totalSales += o.total;
          if ((totalsByMethod as any)[o.paymentMethod] !== undefined) {
-            (totalsByMethod as any)[o.paymentMethod] += o.total;
+            (totalsByMethod as any)[o.paymentMethod] += orderTotal;
          }
 
-         // Cálculo Real do Lucro
-         o.items.forEach((item: any) => {
+         // Cálculo de Lucro detalhado
+         (o.items || []).forEach((item: any) => {
             const product = state.products.find((p: any) => p.id === item.productId);
+            const itemPrice = Number(item.price || 0);
+            const itemQty = Number(item.quantity || 0);
+
             if (product) {
-               totalProfit += (item.price - product.purchasePrice) * item.quantity;
+               totalProfit += (itemPrice - Number(product.purchasePrice || 0)) * itemQty;
             } else {
-               totalProfit += (item.price * 0.3) * item.quantity;
+               // Fallback para 30% de margem se o produto não for encontrado
+               totalProfit += (itemPrice * 0.3) * itemQty;
             }
          });
       });
