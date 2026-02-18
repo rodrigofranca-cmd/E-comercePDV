@@ -17,24 +17,36 @@ export const FinanceTab: React.FC<{ state: any }> = ({ state }) => {
       let totalSales = 0;
       let totalProfit = 0;
 
-      // Lógica de filtro por período
       const now = new Date();
+      // Normaliza hoje para 00:00:00 local
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
       const startOfWeek = new Date(startOfToday);
-      startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay()); // Domingo como início da semana
+      startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
+
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const startOfYear = new Date(now.getFullYear(), 0, 1);
 
       state.orders.forEach((o: any) => {
-         // REGRA: Somente vendas CONFIRMADAS são computadas no financeiro.
          if (o.status !== 'CONFIRMADO') return;
 
-         // Filtro de data
+         // Se não houver data, ignoramos no relatório filtrado (exceto TUDO)
+         if (!o.createdAt && filter !== 'TUDO') return;
+
          const orderDate = new Date(o.createdAt);
-         if (filter === 'DIARIO' && orderDate < startOfToday) return;
-         if (filter === 'SEMANAL' && orderDate < startOfWeek) return;
-         if (filter === 'MENSAL' && orderDate < startOfMonth) return;
-         if (filter === 'ANUAL' && orderDate < startOfYear) return;
+         if (isNaN(orderDate.getTime())) return;
+
+         // Filtro de data robusto
+         if (filter === 'DIARIO') {
+            // Compara apenas a data (dia/mês/ano) ignorando horas
+            if (orderDate.toDateString() !== now.toDateString()) return;
+         } else if (filter === 'SEMANAL') {
+            if (orderDate < startOfWeek) return;
+         } else if (filter === 'MENSAL') {
+            if (orderDate < startOfMonth) return;
+         } else if (filter === 'ANUAL') {
+            if (orderDate < startOfYear) return;
+         }
 
          totalSales += o.total;
          if ((totalsByMethod as any)[o.paymentMethod] !== undefined) {
@@ -64,8 +76,8 @@ export const FinanceTab: React.FC<{ state: any }> = ({ state }) => {
                   key={f}
                   onClick={() => setFilter(f as any)}
                   className={`px-5 py-2 rounded-full text-[8px] font-black italic uppercase transition-all border-2 ${filter === f
-                        ? 'bg-primary text-white border-primary shadow-lg shadow-blue-100 scale-105'
-                        : 'bg-white text-slate-300 border-slate-50 hover:bg-slate-50 active:scale-95'
+                     ? 'bg-primary text-white border-primary shadow-lg shadow-blue-100 scale-105'
+                     : 'bg-white text-slate-300 border-slate-50 hover:bg-slate-50 active:scale-95'
                      }`}
                >
                   {f}
