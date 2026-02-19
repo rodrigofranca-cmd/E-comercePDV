@@ -3,7 +3,9 @@ import React, { useState, useMemo } from 'react';
 import { Card } from '../../components/UI';
 
 export const FinanceTab: React.FC<{ state: any }> = ({ state }) => {
-   const [filter, setFilter] = useState<'TUDO' | 'DIARIO' | 'SEMANAL' | 'MENSAL' | 'ANUAL'>('TUDO');
+   const [filter, setFilter] = useState<'TUDO' | 'DIARIO' | 'SEMANAL' | 'MENSAL' | 'ANUAL' | 'INTERVALO'>('TUDO');
+   const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+   const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
    const stats = useMemo(() => {
       const now = new Date();
@@ -45,6 +47,17 @@ export const FinanceTab: React.FC<{ state: any }> = ({ state }) => {
          if (filter === 'MENSAL') return orderMs >= startOfMonthMs;
          if (filter === 'ANUAL') return orderMs >= startOfYearMs;
 
+         if (filter === 'INTERVALO') {
+            const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
+            const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
+
+            const start = new Date(sYear, sMonth - 1, sDay, 0, 0, 0, 0);
+            const end = new Date(eYear, eMonth - 1, eDay, 23, 59, 59, 999);
+
+            const orderMs = orderDate.getTime();
+            return orderMs >= start.getTime() && orderMs <= end.getTime();
+         }
+
          return true;
       });
 
@@ -84,25 +97,55 @@ export const FinanceTab: React.FC<{ state: any }> = ({ state }) => {
       });
 
       return { totalSales, totalsByMethod, totalProfit };
-   }, [state.orders, state.products, filter]);
+   }, [state.orders, state.products, filter, startDate, endDate]);
 
    return (
       <div className="space-y-6 pb-20 px-1 animate-in fade-in duration-500">
          {/* Filtros de Período - Design Moderno */}
          <div className="flex gap-2 overflow-x-auto carousel-scroll py-2 px-1">
-            {['TUDO', 'DIARIO', 'SEMANAL', 'MENSAL', 'ANUAL'].map(f => (
+            {['TUDO', 'DIARIO', 'SEMANAL', 'MENSAL', 'ANUAL', 'INTERVALO'].map(f => (
                <button
                   key={f}
                   onClick={() => setFilter(f as any)}
-                  className={`px-5 py-2 rounded-full text-[8px] font-black italic uppercase transition-all border-2 ${filter === f
+                  className={`px-5 py-2 rounded-full text-[8px] font-black italic uppercase transition-all border-2 whitespace-nowrap ${filter === f
                      ? 'bg-primary text-white border-primary shadow-lg shadow-blue-100 scale-105'
                      : 'bg-white text-slate-300 border-slate-50 hover:bg-slate-50 active:scale-95'
                      }`}
                >
-                  {f}
+                  {f === 'INTERVALO' ? '📅 PERSONALIZADO' : f}
                </button>
             ))}
          </div>
+
+         {/* Inputs de Data para Intervalo Personalizado */}
+         {filter === 'INTERVALO' && (
+            <div className="flex flex-col gap-3 p-4 bg-white rounded-[30px] border border-slate-100 shadow-sm animate-in slide-in-from-top-2 duration-300">
+               <div className="flex items-center justify-between px-2">
+                  <span className="text-[9px] font-black italic text-slate-400 uppercase tracking-widest">PERÍODO SELECIONADO</span>
+                  <div className="h-px flex-1 mx-4 bg-slate-50"></div>
+               </div>
+               <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                     <label className="text-[7px] font-bold text-slate-400 ml-2 uppercase">Início</label>
+                     <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-[10px] font-bold text-slate-600 focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                     />
+                  </div>
+                  <div className="space-y-1">
+                     <label className="text-[7px] font-bold text-slate-400 ml-2 uppercase">Fim</label>
+                     <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3 text-[10px] font-bold text-slate-600 focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                     />
+                  </div>
+               </div>
+            </div>
+         )}
 
          {/* Banner Vendas Totais - Destaque Principal */}
          <div className="relative bg-slate-100/60 rounded-[50px] p-8 border border-slate-200/50 overflow-hidden flex flex-col items-center shadow-sm">
